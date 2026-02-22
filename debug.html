@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Console</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #1e1e1e; color: #00ff00; }
+        #console { white-space: pre-wrap; }
+        .error { color: #ff0000; }
+        .warn { color: #ffaa00; }
+        .info { color: #00ff00; }
+    </style>
+</head>
+<body>
+    <h1>Family Tree Debug Console</h1>
+    <div id="console"></div>
+    <script>
+        const consoleDiv = document.getElementById('console');
+        
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            consoleDiv.innerHTML += '<div class="info">' + args.join(' ') + '</div>';
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            consoleDiv.innerHTML += '<div class="error">ERROR: ' + args.join(' ') + '</div>';
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            consoleDiv.innerHTML += '<div class="warn">WARN: ' + args.join(' ') + '</div>';
+            originalWarn.apply(console, args);
+        };
+        
+        window.onerror = function(msg, url, line, col, error) {
+            console.error(`${msg} at ${url}:${line}:${col}`, error);
+            return false;
+        };
+    </script>
+    <script src="logger.js"></script>
+    <script src="i18n.js"></script>
+    <script src="person.js"></script>
+    <script src="familyTree.js"></script>
+    <script>
+        console.log('All core scripts loaded successfully!');
+        console.log('Testing Person class...');
+        try {
+            const testPerson = new Person('test1', 'John', 'Doe');
+            console.log('Person created: ' + testPerson.getFullName());
+        } catch(e) {
+            console.error('Person test failed:', e);
+        }
+        
+        console.log('Testing FamilyTree class...');
+        try {
+            const tree = new FamilyTree();
+            const p1 = tree.createPerson('Jane', 'Smith');
+            console.log('FamilyTree person created: ' + p1.getFullName());
+        } catch(e) {
+            console.error('FamilyTree test failed:', e);
+        }
+        
+        console.log('Getting logs from logger...');
+        console.log(logger.exportLogs());
+    </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Family Tree</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1 id="appTitle">Family Tree</h1>
+            <div class="header-controls">
+                <select id="languageSelector">
+                    <option value="en">English</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ru">Русский</option>
+                </select>
+                <button id="addPersonBtn" class="btn-primary">Add Person</button>
+                <button id="autoLayoutBtn" class="btn-secondary">Auto Layout</button>
+                <button id="focusBtn" class="btn-secondary">Focus</button>
+                <button id="showAllBtn" class="btn-secondary">Show All</button>
+                <button id="backupsBtn" class="btn-secondary">Backups</button>
+                <button id="exportBtn" class="btn-secondary">Export JSON</button>
+                <button id="importBtn" class="btn-secondary">Import JSON</button>
+                <button id="logoutBtn" class="btn-secondary">Logout</button>
+                <input type="file" id="importFile" accept=".json" style="display: none;">
+            </div>
+        </header>
+
+        <div class="main-container">
+            <canvas id="familyCanvas"></canvas>
+        </div>
+
+        <div id="personModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle">Person Details</h2>
+                <form id="personForm">
+                    <div class="form-group">
+                        <label id="labelFirstName">First Name:</label>
+                        <input type="text" id="firstName" required>
+                    </div>
+                    <div class="form-group">
+                        <label id="labelLastName">Last Name:</label>
+                        <input type="text" id="lastName" required>
+                    </div>
+                    <div class="form-group">
+                        <label id="labelGender">Gender:</label>
+                        <select id="gender">
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label id="labelBirthday">Birthday:</label>
+                        <input type="date" id="birthday">
+                    </div>
+                    <div class="form-group">
+                        <label id="labelDeathday">Death Day:</label>
+                        <input type="date" id="deathday">
+                    </div>
+                    <div class="form-group">
+                        <label id="labelPhoto">Profile Photo:</label>
+                        <input type="file" id="photo" accept="image/*">
+                        <div id="photoPreview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label id="labelInfo">Information:</label>
+                        <textarea id="info" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label id="labelDataLink">Data Link:</label>
+                        <input type="url" id="dataLink" placeholder="https://drive.google.com/...">
+                    </div>
+                    <div class="form-group">
+                        <label id="labelFiles">Attachments:</label>
+                        <input type="file" id="files" multiple>
+                        <div id="filesPreview"></div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary" id="savePersonBtn">Save</button>
+                        <button type="button" class="btn-secondary" id="cancelBtn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="contextMenu" class="context-menu">
+            <div class="context-item" id="addChild">Add Child</div>
+            <div class="context-item" id="addParents">Add Parents</div>
+            <div class="context-item" id="addSpouse">Add Spouse</div>
+            <div class="context-item" id="addBrother">Add Brother</div>
+            <div class="context-item" id="addSister">Add Sister</div>
+            <div class="context-item" id="editPerson">Edit</div>
+            <div class="context-item" id="viewInfo">View Information</div>
+            <div class="context-item" id="viewFiles">View Files</div>
+            <div class="context-item" id="deletePerson">Delete</div>
+        </div>
+
+        <div id="filesModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="filesModalTitle">Attached Files</h2>
+                <div id="filesList"></div>
+                <button class="btn-secondary" id="closeFilesBtn">Close</button>
+            </div>
+        </div>
+
+        <div id="infoModal" class="modal">
+            <div class="modal-content modal-content-large">
+                <span class="close">&times;</span>
+                <h2 id="infoModalTitle">Person Information</h2>
+                <div id="infoContent">
+                    <div class="info-section">
+                        <div class="info-photo-container">
+                            <img id="infoPhoto" src="" alt="Profile Photo">
+                        </div>
+                        <div class="info-details">
+                            <h3 id="infoName"></h3>
+                            <div class="info-row">
+                                <strong id="labelInfoBirthday">Birthday:</strong>
+                                <span id="infoBirthday"></span>
+                            </div>
+                            <div class="info-row">
+                                <strong id="labelInfoDeathday">Death Day:</strong>
+                                <span id="infoDeathday"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="info-section">
+                        <h4 id="labelInfoText">Information:</h4>
+                        <p id="infoText"></p>
+                    </div>
+                    <div class="info-section">
+                        <h4 id="labelInfoRelationships">Relationships:</h4>
+                        <div id="infoRelationships"></div>
+                    </div>
+                    <div class="info-section">
+                        <h4 id="labelInfoAttachments">Attachments:</h4>
+                        <div id="infoAttachments"></div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-primary" id="editFromInfoBtn">Edit</button>
+                    <button class="btn-secondary" id="closeInfoBtn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="backupsModal" class="modal">
+            <div class="modal-content modal-content-large">
+                <span class="close">&times;</span>
+                <h2>Backup Management</h2>
+                <p style="color: #666; margin-bottom: 1.5rem;">Automatic backups are created on each login. Max 10 backups are stored.</p>
+                <div id="backupsList"></div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="closeBackupsBtn">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mediaViewerModal" class="modal">
+            <div class="modal-content media-viewer-content">
+                <span class="close">&times;</span>
+                <div class="media-viewer-container">
+                    <button class="media-nav-btn media-prev" id="mediaPrevBtn">❮</button>
+                    <div class="media-display">
+                        <img id="mediaImage" src="" alt="Media" style="display: none;">
+                        <div id="mediaFile" style="display: none;">
+                            <div style="font-size: 5rem; color: #667eea;">📄</div>
+                            <p id="mediaFileName" style="font-size: 1.2rem; margin-top: 1rem;"></p>
+                            <button class="btn-primary" id="mediaDownloadBtn">Download</button>
+                        </div>
+                    </div>
+                    <button class="media-nav-btn media-next" id="mediaNextBtn">❯</button>
+                </div>
+                <div class="media-info">
+                    <span id="mediaCounter"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="logger.js"></script>
+    <script src="backup.js"></script>
+    <script src="auth.js"></script>
+    <script src="i18n.js"></script>
+    <script src="person.js"></script>
+    <script src="familyTree.js"></script>
+    <script src="canvas.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

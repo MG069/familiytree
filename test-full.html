@@ -1,0 +1,1661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree - Full Feature Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        #canvasContainer {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            background: white;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        #log {
+            position: fixed;
+            right: 10px;
+            top: 80px;
+            width: 350px;
+            max-height: 500px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 5px;
+            z-index: 999;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-error {
+            color: #f00;
+        }
+
+        .log-success {
+            color: #0f0;
+        }
+
+        .log-info {
+            color: #0ff;
+        }
+
+        .context-menu {
+            position: fixed;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            min-width: 150px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .context-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #eee;
+        }
+
+        .context-item:last-child {
+            border-bottom: none;
+        }
+
+        .context-item:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        #status {
+            position: fixed;
+            top: 150px;
+            right: 370px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        #status h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .info-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .info-modal-content {
+            background: white;
+            margin: 3% auto;
+            padding: 2rem;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-modal-content h2 {
+            color: #667eea;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-section {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-section:last-child {
+            border-bottom: none;
+        }
+
+        .info-section h4 {
+            color: #667eea;
+            margin-bottom: 0.8rem;
+        }
+
+        .info-row {
+            margin-bottom: 0.5rem;
+        }
+
+        .info-row strong {
+            color: #555;
+            display: inline-block;
+            min-width: 120px;
+        }
+
+        .info-text-display {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            min-height: 80px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .relationship-item {
+            padding: 0.6rem;
+            background: #f0f0f0;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .relationship-type {
+            background: #667eea;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+        }
+
+        .modal-close {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #000;
+        }
+
+        .info-input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .info-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .info-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .info-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .relationship-actions {
+            margin-left: auto;
+        }
+
+        .relationship-delete {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .relationship-delete:hover {
+            background: #ff3838;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 1.5rem;
+        }
+
+        .modal-button {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .modal-button-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-button-primary:hover {
+            background: #5568d3;
+        }
+
+        .modal-button-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .modal-button-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .add-relationship-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .info-select {
+            padding: 0.6rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            background: white;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .info-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .add-relationship-btn {
+            padding: 0.6rem 1.2rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .add-relationship-btn:hover {
+            background: #5568d3;
+        }
+
+        .add-relationship-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1 style="color: #667eea; margin-bottom: 10px;">Family Tree - Full Feature Test</h1>
+        <div id="controls">
+            <button id="addPerson">Add Person</button>
+            <button id="autoLayout">Auto Layout</button>
+            <button id="clearCanvas">Clear All</button>
+            <button id="clearLog">Clear Log</button>
+            <button id="testRelationship">Test Relationships</button>
+        </div>
+    </div>
+
+    <div id="canvasContainer">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="status">
+        <h4>Status:</h4>
+        <div>Mode: <span id="mode">Normal</span></div>
+        <div>Persons: <span id="personCount">0</span></div>
+        <div>Relationships: <span id="relationshipCount">0</span></div>
+    </div>
+
+    <div id="log">
+        <div class="log-success">Console Log:</div>
+    </div>
+
+    <div class="context-menu" id="contextMenu">
+        <div class="context-item" id="addChild">Add Child</div>
+        <div class="context-item" id="addParents">Add Parents</div>
+        <div class="context-item" id="addSpouse">Add Spouse</div>
+        <div class="context-item" id="addBrother">Add Brother</div>
+        <div class="context-item" id="addSister">Add Sister</div>
+        <div class="context-item" id="viewInfo">View Information</div>
+        <div class="context-item" id="deletePerson">Delete</div>
+    </div>
+
+    <div class="info-modal" id="infoModal">
+        <div class="info-modal-content">
+            <span class="modal-close" id="closeInfoModal">&times;</span>
+            <h2>Person Information</h2>
+            <div id="infoModalContent"></div>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-primary" onclick="canvas.savePersonInfo()">Save Changes</button>
+                <button class="modal-button modal-button-secondary" onclick="canvas.closeInfoModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        log('Application starting...', 'success');
+
+        class Person {
+            constructor(id, firstName, lastName, x, y, gender = 'male') {
+                this.id = id;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.x = x;
+                this.y = y;
+                this.gender = gender;
+                this.mother = null;
+                this.father = null;
+                this.children = [];
+                this.spouses = [];
+                this.dataLink = '';
+                this.profilePic = '';
+                log(`Person created: ${firstName} ${lastName} (${gender})`, 'success');
+            }
+
+            getFullName() {
+                return `${this.firstName} ${this.lastName}`;
+            }
+
+            addChild(childId) {
+                if (!this.children.includes(childId)) {
+                    this.children.push(childId);
+                    log(`Child ${childId} added to ${this.id}`, 'success');
+                }
+            }
+
+            setMother(motherId) {
+                this.mother = motherId;
+                log(`Mother ${motherId} set for ${this.id}`, 'success');
+            }
+
+            setFather(fatherId) {
+                this.father = fatherId;
+                log(`Father ${fatherId} set for ${this.id}`, 'success');
+            }
+
+            addSpouse(spouseId) {
+                if (!this.spouses.includes(spouseId)) {
+                    this.spouses.push(spouseId);
+                    log(`Spouse ${spouseId} added to ${this.id}`, 'success');
+                }
+            }
+        }
+
+        class Canvas {
+            constructor(canvasElement) {
+                this.canvas = canvasElement;
+                this.ctx = canvasElement.getContext('2d');
+                this.persons = [];
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.scale = 1;
+                this.isDragging = false;
+                this.isDraggingPerson = false;
+                this.draggedPerson = null;
+                this.dragStartX = 0;
+                this.dragStartY = 0;
+                this.personWidth = 150;
+                this.personHeight = 80;
+                this.nextId = 1;
+                this.selectedPerson = null;
+                this.relationshipMode = null;
+                this.relationshipSource = null;
+
+                this.setupCanvas();
+                this.setupEvents();
+                log('Canvas initialized', 'success');
+            }
+
+            setupCanvas() {
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
+                log(`Canvas size: ${this.canvas.width}x${this.canvas.height}`, 'info');
+            }
+
+            setupEvents() {
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                document.addEventListener('mousemove', this.onMouseMove.bind(this));
+                document.addEventListener('mouseup', this.onMouseUp.bind(this));
+                this.canvas.addEventListener('contextmenu', this.onContextMenu.bind(this));
+                this.canvas.addEventListener('click', this.onClick.bind(this));
+                this.canvas.addEventListener('dblclick', this.onDoubleClick.bind(this));
+                
+                window.addEventListener('resize', () => {
+                    this.setupCanvas();
+                    this.render();
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.context-menu')) {
+                        this.hideContextMenu();
+                    }
+                });
+
+                log('Event listeners attached', 'success');
+            }
+
+            onMouseDown(e) {
+                if (e.button !== 0) return;
+
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                const person = this.getPersonAt(x, y);
+                
+                if (person) {
+                    this.isDraggingPerson = true;
+                    this.draggedPerson = person;
+                    this.dragStartX = x - person.x;
+                    this.dragStartY = y - person.y;
+                    log(`Started dragging: ${person.getFullName()}`, 'info');
+                } else {
+                    this.isDragging = true;
+                    this.dragStartX = e.clientX - this.offsetX;
+                    this.dragStartY = e.clientY - this.offsetY;
+                }
+            }
+
+            onMouseMove(e) {
+                if (this.isDraggingPerson && this.draggedPerson) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                    const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                    this.draggedPerson.x = x - this.dragStartX;
+                    this.draggedPerson.y = y - this.dragStartY;
+                    this.render();
+                } else if (this.isDragging) {
+                    this.offsetX = e.clientX - this.dragStartX;
+                    this.offsetY = e.clientY - this.dragStartY;
+                    this.render();
+                }
+            }
+
+            onMouseUp() {
+                this.isDragging = false;
+                this.isDraggingPerson = false;
+                this.draggedPerson = null;
+            }
+
+            onContextMenu(e) {
+                e.preventDefault();
+                log('Right-click detected', 'info');
+
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                const person = this.getPersonAt(x, y);
+
+                if (person) {
+                    this.selectedPerson = person;
+                    this.showContextMenu(e.clientX, e.clientY);
+                    log(`Context menu for: ${person.getFullName()}`, 'success');
+                } else {
+                    this.hideContextMenu();
+                    log('No person at click position', 'info');
+                }
+            }
+
+            onClick(e) {
+                if (this.relationshipMode && this.relationshipSource) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                    const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                    const person = this.getPersonAt(x, y);
+
+                    if (person && person !== this.relationshipSource) {
+                        this.addRelationship(this.relationshipSource, person, this.relationshipMode);
+                        this.cancelRelationshipMode();
+                    }
+                }
+            }
+
+            onDoubleClick(e) {
+                log('=== DOUBLE-CLICK EVENT FIRED ===', 'success');
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                const person = this.getPersonAt(x, y);
+                log('Person at double-click:', person ? person.id : 'none', 'info');
+
+                if (person) {
+                    this.showPersonInfoModal(person);
+                }
+            }
+
+            showPersonInfoModal(person) {
+                log(`Opening editable info modal for ${person.getFullName()}`, 'success');
+                this.currentEditPerson = person;
+                
+                let html = `
+                    <div class="info-section">
+                        <h4>Name</h4>
+                        <div class="info-row">
+                            <input type="text" id="editFirstName" class="info-input" value="${person.firstName}" placeholder="First Name" style="margin-bottom: 0.5rem;">
+                        </div>
+                        <div class="info-row">
+                            <input type="text" id="editLastName" class="info-input" value="${person.lastName}" placeholder="Last Name" style="margin-bottom: 0.5rem;">
+                        </div>
+                        <div class="info-row">
+                            <select id="editGender" class="info-select">
+                                <option value="male" ${person.gender === 'male' ? 'selected' : ''}>Male</option>
+                                <option value="female" ${person.gender === 'female' ? 'selected' : ''}>Female</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>Details</h4>
+                        <div class="info-row"><strong>ID:</strong> ${person.id}</div>
+                        <div class="info-row"><strong>Position:</strong> (${Math.round(person.x)}, ${Math.round(person.y)})</div>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>Information</h4>
+                        <textarea id="editInfo" class="info-textarea" placeholder="Enter additional information...">${person.info || ''}</textarea>
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>Data Link</h4>
+                        <input type="url" id="editDataLink" class="info-input" value="${person.dataLink || ''}" placeholder="https://drive.google.com/...">
+                        ${person.dataLink ? `<div style="margin-top: 0.5rem;"><a href="${person.dataLink}" target="_blank" style="color: #667eea; text-decoration: none;">🔗 Open Link</a></div>` : ''}
+                    </div>
+                    
+                    <div class="info-section">
+                        <h4>Profile Picture</h4>
+                        ${person.profilePic ? `<div style="margin-bottom: 1rem;"><img src="${person.profilePic}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #667eea;"></div>` : ''}
+                        <input type="file" id="editProfilePicFile" accept="image/*" class="info-input" style="margin-bottom: 0.5rem;">
+                        <input type="url" id="editProfilePicUrl" class="info-input" value="${person.profilePic && !person.profilePic.startsWith('data:') ? person.profilePic : ''}" placeholder="Or enter image URL...">
+                        ${person.profilePic ? `<button onclick="canvas.removeProfilePic()" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: #ff4757; color: white; border: none; border-radius: 5px; cursor: pointer;">Remove Picture</button>` : ''}
+                    </div>
+                `;
+                
+                let relationshipsHtml = '';
+                
+                if (person.mother) {
+                    const mother = this.persons.find(p => p.id === person.mother);
+                    if (mother) {
+                        relationshipsHtml += `
+                            <div class="relationship-item">
+                                <span class="relationship-type">Mother</span>
+                                <span>${mother.getFullName()}</span>
+                                <div class="relationship-actions">
+                                    <button class="relationship-delete" onclick="canvas.removeRelationship('${person.id}', '${person.mother}', 'mother')">Remove</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (person.father) {
+                    const father = this.persons.find(p => p.id === person.father);
+                    if (father) {
+                        relationshipsHtml += `
+                            <div class="relationship-item">
+                                <span class="relationship-type">Father</span>
+                                <span>${father.getFullName()}</span>
+                                <div class="relationship-actions">
+                                    <button class="relationship-delete" onclick="canvas.removeRelationship('${person.id}', '${person.father}', 'father')">Remove</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                
+                if (person.spouses.length > 0) {
+                    person.spouses.forEach(spouseId => {
+                        const spouse = this.persons.find(p => p.id === spouseId);
+                        if (spouse) {
+                            relationshipsHtml += `
+                                <div class="relationship-item">
+                                    <span class="relationship-type">Spouse</span>
+                                    <span>${spouse.getFullName()}</span>
+                                    <div class="relationship-actions">
+                                        <button class="relationship-delete" onclick="canvas.removeRelationship('${person.id}', '${spouseId}', 'spouse')">Remove</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+                
+                if (person.children.length > 0) {
+                    person.children.forEach(childId => {
+                        const child = this.persons.find(p => p.id === childId);
+                        if (child) {
+                            relationshipsHtml += `
+                                <div class="relationship-item">
+                                    <span class="relationship-type">Child</span>
+                                    <span>${child.getFullName()}</span>
+                                    <div class="relationship-actions">
+                                        <button class="relationship-delete" onclick="canvas.removeRelationship('${person.id}', '${childId}', 'child')">Remove</button>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
+                }
+                
+                if (relationshipsHtml) {
+                    html += `
+                        <div class="info-section">
+                            <h4>Relationships</h4>
+                            ${relationshipsHtml}
+                            <div class="add-relationship-section">
+                                <select id="selectRelationType" class="info-select">
+                                    <option value="">Select type...</option>
+                                    ${!person.mother ? '<option value="mother">Mother</option>' : ''}
+                                    ${!person.father ? '<option value="father">Father</option>' : ''}
+                                    <option value="spouse">Spouse</option>
+                                    <option value="child">Child</option>
+                                </select>
+                                <select id="selectRelationPerson" class="info-select">
+                                    <option value="">Select person...</option>
+                                </select>
+                                <button class="add-relationship-btn" onclick="canvas.addRelationshipFromModal()">Add</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="info-section">
+                            <h4>Relationships</h4>
+                            <p style="color: #999; font-style: italic;">No relationships</p>
+                            <div class="add-relationship-section">
+                                <select id="selectRelationType" class="info-select">
+                                    <option value="">Select type...</option>
+                                    ${!person.mother ? '<option value="mother">Mother</option>' : ''}
+                                    ${!person.father ? '<option value="father">Father</option>' : ''}
+                                    <option value="spouse">Spouse</option>
+                                    <option value="child">Child</option>
+                                </select>
+                                <select id="selectRelationPerson" class="info-select">
+                                    <option value="">Select person...</option>
+                                </select>
+                                <button class="add-relationship-btn" onclick="canvas.addRelationshipFromModal()">Add</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('infoModalContent').innerHTML = html;
+                document.getElementById('infoModal').style.display = 'block';
+                
+                const personSelect = document.getElementById('selectRelationPerson');
+                const typeSelect = document.getElementById('selectRelationType');
+                
+                const updatePersonList = () => {
+                    personSelect.innerHTML = '<option value="">Select person...</option>';
+                    const selectedType = typeSelect.value;
+                    
+                    this.persons.forEach(p => {
+                        if (p.id === person.id) return;
+                        
+                        if (selectedType === 'mother' && p.gender !== 'female') return;
+                        if (selectedType === 'father' && p.gender !== 'male') return;
+                        
+                        const option = document.createElement('option');
+                        option.value = p.id;
+                        option.textContent = p.getFullName();
+                        personSelect.appendChild(option);
+                    });
+                };
+                
+                typeSelect.addEventListener('change', updatePersonList);
+                updatePersonList();
+            }
+
+            addRelationshipFromModal() {
+                if (!this.currentEditPerson) return;
+
+                const relationType = document.getElementById('selectRelationType').value;
+                const targetId = document.getElementById('selectRelationPerson').value;
+
+                if (!relationType || !targetId) {
+                    log('Please select both relationship type and person', 'error');
+                    return;
+                }
+
+                const target = this.persons.find(p => p.id === targetId);
+                if (!target) return;
+
+                this.addRelationship(this.currentEditPerson, target, relationType);
+                this.showPersonInfoModal(this.currentEditPerson);
+            }
+
+            savePersonInfo() {
+                if (!this.currentEditPerson) return;
+
+                const firstName = document.getElementById('editFirstName').value.trim();
+                const lastName = document.getElementById('editLastName').value.trim();
+                const gender = document.getElementById('editGender').value;
+                const info = document.getElementById('editInfo').value.trim();
+                const dataLink = document.getElementById('editDataLink').value.trim();
+                const profilePicUrl = document.getElementById('editProfilePicUrl').value.trim();
+                const profilePicFile = document.getElementById('editProfilePicFile').files[0];
+
+                if (!firstName || !lastName) {
+                    log('First name and last name are required', 'error');
+                    return;
+                }
+
+                this.currentEditPerson.firstName = firstName;
+                this.currentEditPerson.lastName = lastName;
+                this.currentEditPerson.gender = gender;
+                this.currentEditPerson.info = info;
+                this.currentEditPerson.dataLink = dataLink;
+
+                if (profilePicFile) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.currentEditPerson.profilePic = e.target.result;
+                        log(`Updated: ${this.currentEditPerson.getFullName()} with uploaded image`, 'success');
+                        this.render();
+                        this.closeInfoModal();
+                    };
+                    reader.readAsDataURL(profilePicFile);
+                } else {
+                    if (profilePicUrl) {
+                        this.currentEditPerson.profilePic = profilePicUrl;
+                    }
+                    log(`Updated: ${this.currentEditPerson.getFullName()}`, 'success');
+                    this.render();
+                    this.closeInfoModal();
+                }
+            }
+
+            removeProfilePic() {
+                if (this.currentEditPerson) {
+                    this.currentEditPerson.profilePic = '';
+                    log(`Removed profile picture for ${this.currentEditPerson.getFullName()}`, 'success');
+                    this.showPersonInfoModal(this.currentEditPerson);
+                }
+            }
+
+            removeRelationship(personId, targetId, type) {
+                const person = this.persons.find(p => p.id === personId);
+                const target = this.persons.find(p => p.id === targetId);
+
+                if (!person || !target) return;
+
+                if (type === 'mother') {
+                    person.mother = null;
+                    target.children = target.children.filter(id => id !== personId);
+                    log(`Removed mother relationship: ${person.getFullName()} -> ${target.getFullName()}`, 'success');
+                } else if (type === 'father') {
+                    person.father = null;
+                    target.children = target.children.filter(id => id !== personId);
+                    log(`Removed father relationship: ${person.getFullName()} -> ${target.getFullName()}`, 'success');
+                } else if (type === 'child') {
+                    person.children = person.children.filter(id => id !== targetId);
+                    if (target.mother === personId) target.mother = null;
+                    if (target.father === personId) target.father = null;
+                    log(`Removed child relationship: ${person.getFullName()} -> ${target.getFullName()}`, 'success');
+                } else if (type === 'spouse') {
+                    person.spouses = person.spouses.filter(id => id !== targetId);
+                    target.spouses = target.spouses.filter(id => id !== personId);
+                    log(`Removed spouse relationship: ${person.getFullName()} <-> ${target.getFullName()}`, 'success');
+                }
+
+                this.updateStatus();
+                this.render();
+                this.showPersonInfoModal(person);
+            }
+
+            closeInfoModal() {
+                document.getElementById('infoModal').style.display = 'none';
+                this.currentEditPerson = null;
+            }
+
+            autoLayout() {
+                if (this.persons.length === 0) return;
+                
+                log('Adjusting for 90-degree lines...', 'info');
+                
+                this.persons.forEach(person => {
+                    person.spouses.forEach(spouseId => {
+                        const spouse = this.persons.find(p => p.id === spouseId);
+                        if (spouse && person.id < spouseId) {
+                            spouse.y = person.y;
+                        }
+                    });
+                });
+                
+                this.render();
+                log('Layout adjusted - all lines are now 90 degrees!', 'success');
+            }
+
+            calculateGenerations() {
+                const generations = {};
+                const visited = new Set();
+                
+                const findRoots = () => {
+                    return this.persons.filter(p => !p.mother && !p.father);
+                };
+                
+                const assignGeneration = (person, level) => {
+                    if (visited.has(person.id)) return;
+                    visited.add(person.id);
+                    
+                    if (!generations[level]) generations[level] = [];
+                    generations[level].push(person);
+                    
+                    person.children.forEach(childId => {
+                        const child = this.persons.find(p => p.id === childId);
+                        if (child) assignGeneration(child, level + 1);
+                    });
+                    
+                    person.spouses.forEach(spouseId => {
+                        const spouse = this.persons.find(p => p.id === spouseId);
+                        if (spouse && !visited.has(spouse.id)) {
+                            visited.add(spouse.id);
+                            if (!generations[level]) generations[level] = [];
+                            generations[level].push(spouse);
+                        }
+                    });
+                };
+                
+                const roots = findRoots();
+                roots.forEach(root => assignGeneration(root, 0));
+                
+                this.persons.forEach(person => {
+                    if (!visited.has(person.id)) {
+                        assignGeneration(person, 0);
+                    }
+                });
+                
+                return generations;
+            }
+
+            groupFamilies() {
+                const families = [];
+                const processed = new Set();
+                
+                this.persons.forEach(person => {
+                    if (person.spouses.length > 0 && !processed.has(person.id)) {
+                        const family = {
+                            parents: [person],
+                            children: [...person.children]
+                        };
+                        
+                        person.spouses.forEach(spouseId => {
+                            const spouse = this.persons.find(p => p.id === spouseId);
+                            if (spouse) {
+                                family.parents.push(spouse);
+                                processed.add(spouse.id);
+                            }
+                        });
+                        
+                        processed.add(person.id);
+                        families.push(family);
+                    }
+                });
+                
+                return families;
+            }
+
+            centerChildrenUnderParents() {
+                const familyGroups = this.groupFamilies();
+                
+                familyGroups.forEach(family => {
+                    if (family.children.length === 0) return;
+                    
+                    const parents = family.parents;
+                    if (parents.length === 0) return;
+                    
+                    const parentXs = parents.map(p => p.x + this.personWidth / 2);
+                    const parentCenterX = parentXs.reduce((a, b) => a + b, 0) / parentXs.length;
+                    
+                    const children = family.children
+                        .map(childId => this.persons.find(p => p.id === childId))
+                        .filter(c => c);
+                    
+                    if (children.length === 0) return;
+                    
+                    const childrenWidth = (children.length - 1) * 200;
+                    const startX = parentCenterX - childrenWidth / 2 - this.personWidth / 2;
+                    
+                    children.forEach((child, index) => {
+                        child.x = startX + index * 200;
+                    });
+                });
+            }
+
+            alignParentsWithChildren() {
+                const familyGroups = this.groupFamilies();
+                
+                familyGroups.forEach(family => {
+                    if (family.children.length === 0) return;
+                    
+                    const parents = family.parents;
+                    if (parents.length === 0) return;
+                    
+                    const children = family.children
+                        .map(childId => this.persons.find(p => p.id === childId))
+                        .filter(c => c);
+                    
+                    if (children.length === 0) return;
+                    
+                    const childXs = children.map(c => c.x + this.personWidth / 2);
+                    const minChildX = Math.min(...childXs);
+                    const maxChildX = Math.max(...childXs);
+                    const childrenCenterX = (minChildX + maxChildX) / 2;
+                    
+                    parents.forEach(parent => {
+                        const currentParentCenterX = parent.x + this.personWidth / 2;
+                        const parentCenterX = parents.length === 2 
+                            ? (parents[0].x + parents[1].x + this.personWidth) / 2
+                            : currentParentCenterX;
+                        
+                        const offset = childrenCenterX - parentCenterX;
+                        parent.x += offset;
+                    });
+                });
+            }
+
+            resolveCollisions() {
+                const minGap = 50;
+                let collisionFound = true;
+                let iterations = 0;
+                const maxIterations = 50;
+                
+                while (collisionFound && iterations < maxIterations) {
+                    collisionFound = false;
+                    iterations++;
+                    
+                    for (let i = 0; i < this.persons.length; i++) {
+                        for (let j = i + 1; j < this.persons.length; j++) {
+                            const p1 = this.persons[i];
+                            const p2 = this.persons[j];
+                            
+                            const dx = Math.abs((p1.x + this.personWidth / 2) - (p2.x + this.personWidth / 2));
+                            const dy = Math.abs((p1.y + this.personHeight / 2) - (p2.y + this.personHeight / 2));
+                            
+                            const minDistX = this.personWidth + minGap;
+                            const minDistY = this.personHeight + minGap;
+                            
+                            if (dx < minDistX && dy < minDistY) {
+                                collisionFound = true;
+                                
+                                if (Math.abs(p1.y - p2.y) < 50) {
+                                    if (p1.x < p2.x) {
+                                        p2.x = p1.x + minDistX;
+                                    } else {
+                                        p1.x = p2.x + minDistX;
+                                    }
+                                } else {
+                                    if (p1.y < p2.y) {
+                                        p2.y = p1.y + minDistY;
+                                    } else {
+                                        p1.y = p2.y + minDistY;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                if (iterations >= maxIterations) {
+                    log('Collision resolution reached max iterations', 'info');
+                }
+            }
+
+            adjustForLineAvoidance() {
+                const generations = this.calculateGenerations();
+                
+                Object.keys(generations).forEach(genLevel => {
+                    const peopleInGen = generations[genLevel];
+                    
+                    peopleInGen.sort((a, b) => a.x - b.x);
+                    
+                    for (let i = 1; i < peopleInGen.length; i++) {
+                        const prev = peopleInGen[i - 1];
+                        const curr = peopleInGen[i];
+                        
+                        const prevHasChildren = prev.children.length > 0;
+                        const currHasParents = curr.mother || curr.father;
+                        
+                        if (prevHasChildren && currHasParents) {
+                            const minSafeDist = 200;
+                            const actualDist = curr.x - (prev.x + this.personWidth);
+                            
+                            if (actualDist < minSafeDist) {
+                                curr.x = prev.x + this.personWidth + minSafeDist;
+                            }
+                        }
+                    }
+                });
+                
+                const siblings = new Map();
+                this.persons.forEach(person => {
+                    if (person.mother || person.father) {
+                        const key = `${person.mother || 'none'}-${person.father || 'none'}`;
+                        if (!siblings.has(key)) siblings.set(key, []);
+                        siblings.get(key).push(person);
+                    }
+                });
+                
+                siblings.forEach((siblingGroup, key) => {
+                    if (siblingGroup.length > 1) {
+                        siblingGroup.sort((a, b) => a.x - b.x);
+                        
+                        for (let i = 1; i < siblingGroup.length; i++) {
+                            const spacing = 220;
+                            const expectedX = siblingGroup[i - 1].x + spacing;
+                            if (siblingGroup[i].x < expectedX) {
+                                siblingGroup[i].x = expectedX;
+                            }
+                        }
+                    }
+                });
+            }
+
+            showPersonInfo(person) {
+                this.showPersonInfoModal(person);
+            }
+
+            showContextMenu(x, y) {
+                const menu = document.getElementById('contextMenu');
+                menu.style.display = 'block';
+                menu.style.left = x + 'px';
+                menu.style.top = y + 'px';
+            }
+
+            hideContextMenu() {
+                document.getElementById('contextMenu').style.display = 'none';
+            }
+
+            startRelationshipMode(mode) {
+                if (!this.selectedPerson) {
+                    log('No person selected', 'error');
+                    return;
+                }
+
+                this.relationshipMode = mode;
+                this.relationshipSource = this.selectedPerson;
+                this.hideContextMenu();
+                document.getElementById('mode').textContent = `Add ${mode}`;
+                log(`Click another person to add ${mode}`, 'info');
+            }
+
+            cancelRelationshipMode() {
+                this.relationshipMode = null;
+                this.relationshipSource = null;
+                document.getElementById('mode').textContent = 'Normal';
+                log('Relationship mode cancelled', 'info');
+            }
+
+            addRelationship(source, target, type) {
+                if (type === 'child') {
+                    source.addChild(target.id);
+                    if (source.gender === 'female') {
+                        target.setMother(source.id);
+                    } else {
+                        target.setFather(source.id);
+                    }
+                    log(`${target.getFullName()} is now child of ${source.getFullName()}`, 'success');
+                } else if (type === 'mother') {
+                    if (target.gender !== 'female') {
+                        log('Mother must be female', 'error');
+                        return;
+                    }
+                    source.setMother(target.id);
+                    target.addChild(source.id);
+                    log(`${target.getFullName()} is now mother of ${source.getFullName()}`, 'success');
+                } else if (type === 'father') {
+                    if (target.gender !== 'male') {
+                        log('Father must be male', 'error');
+                        return;
+                    }
+                    source.setFather(target.id);
+                    target.addChild(source.id);
+                    log(`${target.getFullName()} is now father of ${source.getFullName()}`, 'success');
+                } else if (type === 'spouse') {
+                    source.addSpouse(target.id);
+                    target.addSpouse(source.id);
+                    log(`${source.getFullName()} and ${target.getFullName()} are now spouses`, 'success');
+                }
+                this.updateStatus();
+                this.render();
+            }
+
+            getPersonAt(x, y) {
+                for (let i = this.persons.length - 1; i >= 0; i--) {
+                    const person = this.persons[i];
+                    if (x >= person.x && x <= person.x + this.personWidth &&
+                        y >= person.y && y <= person.y + this.personHeight) {
+                        return person;
+                    }
+                }
+                return null;
+            }
+
+            addPerson(firstName, lastName, gender = 'male') {
+                const x = 100 + Math.random() * 300;
+                const y = 100 + Math.random() * 200;
+                const person = new Person(`person_${this.nextId++}`, firstName, lastName, x, y, gender);
+                this.persons.push(person);
+                this.updateStatus();
+                this.render();
+                return person;
+            }
+
+            deletePerson(person) {
+                const index = this.persons.indexOf(person);
+                if (index > -1) {
+                    this.persons.splice(index, 1);
+                    log(`Deleted: ${person.getFullName()}`, 'info');
+                    this.updateStatus();
+                    this.render();
+                }
+            }
+
+            clear() {
+                this.persons = [];
+                this.updateStatus();
+                this.render();
+                log('Cleared all persons', 'info');
+            }
+
+            updateStatus() {
+                document.getElementById('personCount').textContent = this.persons.length;
+                let relationshipCount = 0;
+                this.persons.forEach(p => {
+                    relationshipCount += p.children.length + p.spouses.length;
+                });
+                document.getElementById('relationshipCount').textContent = relationshipCount;
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.save();
+                this.ctx.translate(this.offsetX, this.offsetY);
+                this.ctx.scale(this.scale, this.scale);
+
+                this.drawConnections();
+                this.persons.forEach(person => this.drawPerson(person));
+
+                this.ctx.restore();
+            }
+
+            drawConnections() {
+                const drawnSpouses = new Set();
+                
+                this.persons.forEach(person => {
+                    person.spouses.forEach(spouseId => {
+                        const spouse = this.persons.find(p => p.id === spouseId);
+                        if (spouse && !drawnSpouses.has(`${spouseId}-${person.id}`)) {
+                            const x1 = person.x + this.personWidth / 2;
+                            const y1 = person.y + this.personHeight / 2;
+                            const x2 = spouse.x + this.personWidth / 2;
+                            const y2 = spouse.y + this.personHeight / 2;
+                            
+                            if (Math.abs(y1 - y2) < 10) {
+                                this.drawLine(x1, y1, x2, y2, '#ff6b6b', 3);
+                            } else {
+                                const midX = (x1 + x2) / 2;
+                                this.drawLine(x1, y1, midX, y1, '#ff6b6b', 3);
+                                this.drawLine(midX, y1, midX, y2, '#ff6b6b', 3);
+                                this.drawLine(midX, y2, x2, y2, '#ff6b6b', 3);
+                            }
+                            
+                            drawnSpouses.add(`${person.id}-${spouseId}`);
+                        }
+                    });
+                });
+                
+                const parentPairs = new Map();
+                
+                this.persons.forEach(child => {
+                    if (child.mother || child.father) {
+                        const mother = this.persons.find(p => p.id === child.mother);
+                        const father = this.persons.find(p => p.id === child.father);
+                        
+                        if (mother && father) {
+                            const pairKey = [mother.id, father.id].sort().join('-');
+                            if (!parentPairs.has(pairKey)) {
+                                parentPairs.set(pairKey, {
+                                    mother,
+                                    father,
+                                    children: []
+                                });
+                            }
+                            parentPairs.get(pairKey).children.push(child);
+                        } else if (mother) {
+                            const motherX = mother.x + this.personWidth / 2;
+                            const motherY = mother.y + this.personHeight / 2;
+                            const childX = child.x + this.personWidth / 2;
+                            const childY = child.y + this.personHeight / 2;
+                            
+                            const midY = motherY + (childY - motherY) / 2;
+                            this.drawLine(motherX, motherY, motherX, midY, '#667eea', 2);
+                            this.drawLine(motherX, midY, childX, midY, '#667eea', 2);
+                            this.drawLine(childX, midY, childX, childY, '#667eea', 2);
+                        } else if (father) {
+                            const fatherX = father.x + this.personWidth / 2;
+                            const fatherY = father.y + this.personHeight / 2;
+                            const childX = child.x + this.personWidth / 2;
+                            const childY = child.y + this.personHeight / 2;
+                            
+                            const midY = fatherY + (childY - fatherY) / 2;
+                            this.drawLine(fatherX, fatherY, fatherX, midY, '#667eea', 2);
+                            this.drawLine(fatherX, midY, childX, midY, '#667eea', 2);
+                            this.drawLine(childX, midY, childX, childY, '#667eea', 2);
+                        }
+                    }
+                });
+                
+                parentPairs.forEach(({ mother, father, children }) => {
+                    const motherX = mother.x + this.personWidth / 2;
+                    const motherY = mother.y + this.personHeight / 2;
+                    const fatherX = father.x + this.personWidth / 2;
+                    const fatherY = father.y + this.personHeight / 2;
+                    
+                    const parentMidX = (motherX + fatherX) / 2;
+                    const parentMidY = (motherY + fatherY) / 2;
+                    
+                    const verticalDropY = parentMidY + 60;
+                    this.drawLine(parentMidX, parentMidY, parentMidX, verticalDropY, '#667eea', 2);
+                    
+                    if (children.length > 0) {
+                        const childrenX = children.map(c => c.x + this.personWidth / 2);
+                        const minChildX = Math.min(...childrenX);
+                        const maxChildX = Math.max(...childrenX);
+                        
+                        this.drawLine(minChildX, verticalDropY, maxChildX, verticalDropY, '#667eea', 2);
+                        
+                        children.forEach(child => {
+                            const childX = child.x + this.personWidth / 2;
+                            const childY = child.y + this.personHeight / 2;
+                            this.drawLine(childX, verticalDropY, childX, childY, '#667eea', 2);
+                        });
+                    }
+                });
+            }
+
+            drawLine(x1, y1, x2, y2, color, width) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x1, y1);
+                this.ctx.lineTo(x2, y2);
+                this.ctx.strokeStyle = color;
+                this.ctx.lineWidth = width;
+                this.ctx.stroke();
+            }
+
+            drawPerson(person) {
+                const x = person.x;
+                const y = person.y;
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.strokeStyle = person.gender === 'female' ? '#ff69b4' : '#4a90e2';
+                this.ctx.lineWidth = 3;
+                this.drawRoundRect(x, y, this.personWidth, this.personHeight, 10);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                if (person.profilePic) {
+                    if (!person._imgElement || person._imgElement.src !== person.profilePic) {
+                        person._imgElement = new Image();
+                        person._imgElement.src = person.profilePic;
+                    }
+                    
+                    if (person._imgElement.complete) {
+                        this.ctx.save();
+                        this.ctx.beginPath();
+                        this.ctx.arc(x + 30, y + 40, 25, 0, Math.PI * 2);
+                        this.ctx.closePath();
+                        this.ctx.clip();
+                        this.ctx.drawImage(person._imgElement, x + 5, y + 15, 50, 50);
+                        this.ctx.restore();
+                        
+                        this.ctx.strokeStyle = '#667eea';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.beginPath();
+                        this.ctx.arc(x + 30, y + 40, 25, 0, Math.PI * 2);
+                        this.ctx.stroke();
+                    } else {
+                        person._imgElement.onload = () => this.render();
+                        this.drawDefaultAvatar(person, x, y);
+                    }
+                } else {
+                    this.drawDefaultAvatar(person, x, y);
+                }
+
+                this.ctx.fillStyle = '#333';
+                this.ctx.font = 'bold 14px Arial';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(person.getFullName(), x + 65, y + 40);
+            }
+
+            drawDefaultAvatar(person, x, y) {
+                this.ctx.fillStyle = '#667eea';
+                this.ctx.beginPath();
+                this.ctx.arc(x + 30, y + 40, 25, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = 'bold 20px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                const initials = person.firstName[0] + person.lastName[0];
+                this.ctx.fillText(initials, x + 30, y + 40);
+            }
+
+            drawRoundRect(x, y, width, height, radius) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + radius, y);
+                this.ctx.lineTo(x + width - radius, y);
+                this.ctx.arcTo(x + width, y, x + width, y + radius, radius);
+                this.ctx.lineTo(x + width, y + height - radius);
+                this.ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+                this.ctx.lineTo(x + radius, y + height);
+                this.ctx.arcTo(x, y + height, x, y + height - radius, radius);
+                this.ctx.lineTo(x, y + radius);
+                this.ctx.arcTo(x, y, x + radius, y, radius);
+                this.ctx.closePath();
+            }
+        }
+
+        const canvas = new Canvas(document.getElementById('canvas'));
+
+        const names = [
+            ['John', 'Doe'],
+            ['Jane', 'Smith'],
+            ['Bob', 'Johnson'],
+            ['Alice', 'Williams'],
+            ['Charlie', 'Brown'],
+            ['Diana', 'Jones']
+        ];
+        let nameIndex = 0;
+
+        document.getElementById('addPerson').addEventListener('click', () => {
+            const [firstName, lastName] = names[nameIndex % names.length];
+            nameIndex++;
+            canvas.addPerson(firstName, lastName);
+        });
+
+        document.getElementById('autoLayout').addEventListener('click', () => {
+            canvas.autoLayout();
+        });
+
+        document.getElementById('clearCanvas').addEventListener('click', () => {
+            canvas.clear();
+        });
+
+        document.getElementById('clearLog').addEventListener('click', () => {
+            logDiv.innerHTML = '<div class="log-success">Console Log (cleared):</div>';
+        });
+
+        document.getElementById('testRelationship').addEventListener('click', () => {
+            log('=== RELATIONSHIP TEST ===', 'success');
+            log('1. Add 2-3 persons', 'info');
+            log('2. RIGHT-CLICK on a person', 'info');
+            log('3. Select "Add Child/Parent/Spouse"', 'info');
+            log('4. CLICK on another person to create relationship', 'info');
+            log('You should see colored lines: Blue=Parent-Child, Red=Spouse', 'info');
+        });
+
+        document.getElementById('addChild').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                const [firstName, lastName] = names[nameIndex % names.length];
+                nameIndex++;
+                const child = canvas.addPerson(firstName, lastName);
+                child.x = canvas.selectedPerson.x + 200;
+                child.y = canvas.selectedPerson.y + 150;
+                canvas.addRelationship(canvas.selectedPerson, child, 'child');
+                canvas.hideContextMenu();
+                log(`Created child ${child.getFullName()} for ${canvas.selectedPerson.getFullName()}`, 'success');
+            }
+        });
+
+        document.getElementById('addParents').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                if (canvas.selectedPerson.mother && canvas.selectedPerson.father) {
+                    log('ERROR: This person already has both parents!', 'error');
+                    alert('This person already has both parents. A child can only have one mother and one father.');
+                    canvas.hideContextMenu();
+                    return;
+                }
+                
+                const [firstName1, lastName1] = names[nameIndex % names.length];
+                nameIndex++;
+                const father = canvas.addPerson(firstName1, lastName1);
+                father.gender = 'male';
+                father.x = canvas.selectedPerson.x - 250;
+                father.y = canvas.selectedPerson.y - 150;
+                
+                const [firstName2, lastName2] = names[nameIndex % names.length];
+                nameIndex++;
+                const mother = canvas.addPerson(firstName2, lastName2);
+                mother.gender = 'female';
+                mother.x = canvas.selectedPerson.x + 50;
+                mother.y = canvas.selectedPerson.y - 150;
+                
+                mother.addSpouse(father.id);
+                father.addSpouse(mother.id);
+                
+                canvas.selectedPerson.setMother(mother.id);
+                canvas.selectedPerson.setFather(father.id);
+                mother.addChild(canvas.selectedPerson.id);
+                father.addChild(canvas.selectedPerson.id);
+                
+                canvas.updateStatus();
+                canvas.render();
+                canvas.hideContextMenu();
+                log(`Created parents ${mother.getFullName()} & ${father.getFullName()} for ${canvas.selectedPerson.getFullName()}`, 'success');
+            }
+        });
+
+        document.getElementById('addSpouse').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                const [firstName, lastName] = names[nameIndex % names.length];
+                nameIndex++;
+                const spouse = canvas.addPerson(firstName, lastName);
+                spouse.x = canvas.selectedPerson.x + 200;
+                spouse.y = canvas.selectedPerson.y;
+                canvas.addRelationship(canvas.selectedPerson, spouse, 'spouse');
+                canvas.hideContextMenu();
+                log(`Created spouse ${spouse.getFullName()} for ${canvas.selectedPerson.getFullName()}`, 'success');
+            }
+        });
+
+        document.getElementById('addBrother').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                if (!canvas.selectedPerson.mother && !canvas.selectedPerson.father) {
+                    log('ERROR: Cannot add brother - person has no parents!', 'error');
+                    alert('This person has no parents. Add parents first to create siblings.');
+                    canvas.hideContextMenu();
+                    return;
+                }
+                
+                const [firstName, lastName] = names[nameIndex % names.length];
+                nameIndex++;
+                const brother = canvas.addPerson(firstName, lastName, 'male');
+                brother.x = canvas.selectedPerson.x + 200;
+                brother.y = canvas.selectedPerson.y;
+                
+                if (canvas.selectedPerson.mother) {
+                    brother.setMother(canvas.selectedPerson.mother);
+                    const mother = canvas.persons.find(p => p.id === canvas.selectedPerson.mother);
+                    if (mother) mother.addChild(brother.id);
+                }
+                
+                if (canvas.selectedPerson.father) {
+                    brother.setFather(canvas.selectedPerson.father);
+                    const father = canvas.persons.find(p => p.id === canvas.selectedPerson.father);
+                    if (father) father.addChild(brother.id);
+                }
+                
+                canvas.updateStatus();
+                canvas.render();
+                canvas.hideContextMenu();
+                log(`Created brother ${brother.getFullName()} for ${canvas.selectedPerson.getFullName()}`, 'success');
+            }
+        });
+
+        document.getElementById('addSister').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                if (!canvas.selectedPerson.mother && !canvas.selectedPerson.father) {
+                    log('ERROR: Cannot add sister - person has no parents!', 'error');
+                    alert('This person has no parents. Add parents first to create siblings.');
+                    canvas.hideContextMenu();
+                    return;
+                }
+                
+                const [firstName, lastName] = names[nameIndex % names.length];
+                nameIndex++;
+                const sister = canvas.addPerson(firstName, lastName, 'female');
+                sister.x = canvas.selectedPerson.x + 200;
+                sister.y = canvas.selectedPerson.y;
+                
+                if (canvas.selectedPerson.mother) {
+                    sister.setMother(canvas.selectedPerson.mother);
+                    const mother = canvas.persons.find(p => p.id === canvas.selectedPerson.mother);
+                    if (mother) mother.addChild(sister.id);
+                }
+                
+                if (canvas.selectedPerson.father) {
+                    sister.setFather(canvas.selectedPerson.father);
+                    const father = canvas.persons.find(p => p.id === canvas.selectedPerson.father);
+                    if (father) father.addChild(sister.id);
+                }
+                
+                canvas.updateStatus();
+                canvas.render();
+                canvas.hideContextMenu();
+                log(`Created sister ${sister.getFullName()} for ${canvas.selectedPerson.getFullName()}`, 'success');
+            }
+        });
+
+        document.getElementById('deletePerson').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                canvas.deletePerson(canvas.selectedPerson);
+                canvas.hideContextMenu();
+            }
+        });
+
+        document.getElementById('viewInfo').addEventListener('click', () => {
+            if (canvas.selectedPerson) {
+                canvas.showPersonInfoModal(canvas.selectedPerson);
+                canvas.hideContextMenu();
+            }
+        });
+
+        document.getElementById('closeInfoModal').addEventListener('click', () => {
+            canvas.closeInfoModal();
+        });
+
+        document.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('infoModal')) {
+                canvas.closeInfoModal();
+            }
+        });
+
+        canvas.addPerson('Test', 'Person');
+        canvas.addPerson('Sample', 'User');
+        canvas.updateStatus();
+
+        log('====================', 'success');
+        log('APPLICATION READY!', 'success');
+        log('Try RIGHT-CLICKING on a person', 'info');
+        log('====================', 'success');
+
+        window.onerror = function(msg, url, line, col, error) {
+            log(`ERROR: ${msg} at line ${line}`, 'error');
+            return false;
+        };
+    </script>
+</body>
+</html>

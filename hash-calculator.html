@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><title>Get Hash</title></head>
+<body>
+  <h2>SHA-256 Hash Generator</h2>
+  <input type="text" id="pass" value="family2026" style="width:300px">
+  <button onclick="calc()">Berechnen</button>
+  <div id="out" style="margin-top:20px; font-family:monospace"></div>
+  <script>
+    async function calc() {
+      const pw = document.getElementById('pass').value;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pw);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      document.getElementById('out').innerHTML = `<strong>Hash:</strong><br><textarea readonly style="width:500px;height:60px">${hash}</textarea>`;
+    }
+    calc();
+  </script>
+</body>
+</html>

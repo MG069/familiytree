@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hash Verification</title>
+</head>
+<body>
+  <h2>Hash Verification</h2>
+  <div id="result"></div>
+  <script>
+    async function verifyHash() {
+      const password = 'family2026';
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      
+      const codeHash = 'b8c6d6f8a5c3e9d4f2a1b7e5c8d9f3a2e1b4c7d6f9a2e5b8c1d4f7a9e2b5c8d1';
+      
+      document.getElementById('result').innerHTML = `
+        <p><strong>Passwort:</strong> ${password}</p>
+        <p><strong>Korrekter SHA-256 Hash:</strong><br><code>${hash}</code></p>
+        <p><strong>Hash im Code:</strong><br><code>${codeHash}</code></p>
+        <p><strong>Match:</strong> ${hash === codeHash ? '✅ JA' : '❌ NEIN'}</p>
+      `;
+    }
+    verifyHash();
+  </script>
+</body>
+</html>

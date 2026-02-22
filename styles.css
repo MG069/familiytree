@@ -1,0 +1,738 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #333;
+    overflow: hidden;
+}
+
+#app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: white;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    color: #667eea;
+    font-size: 1.8rem;
+}
+
+.header-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+#languageSelector {
+    padding: 0.5rem;
+    border: 2px solid #667eea;
+    border-radius: 5px;
+    background: white;
+    color: #667eea;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary, .btn-secondary {
+    padding: 0.7rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-secondary:hover {
+    background: #667eea;
+    color: white;
+}
+
+.btn-active {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+    border: 2px solid #d97706;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+    }
+}
+
+.main-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+#familyCanvas {
+    width: 100%;
+    height: 100%;
+    background: white;
+    cursor: grab;
+}
+
+#familyCanvas:active {
+    cursor: grabbing;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.modal-content h2 {
+    color: #667eea;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group textarea {
+    width: 100%;
+    padding: 0.7rem;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.form-group input[type="file"] {
+    padding: 0.5rem 0;
+}
+
+#photoPreview, #filesPreview {
+    margin-top: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+#photoPreview img {
+    max-width: 200px;
+    max-height: 200px;
+    border-radius: 10px;
+    border: 2px solid #ddd;
+}
+
+.file-item {
+    padding: 0.5rem 1rem;
+    background: #f0f0f0;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.context-menu {
+    display: none;
+    position: fixed;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    min-width: 150px;
+    overflow: hidden;
+}
+
+.context-item {
+    padding: 0.8rem 1.2rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.context-item:hover {
+    background: #667eea;
+    color: white;
+}
+
+#filesList {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.file-view-item {
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.file-view-item:hover {
+    background: #667eea;
+    color: white;
+    transform: translateX(5px);
+}
+
+.file-view-item img {
+    max-width: 100%;
+    margin-top: 0.5rem;
+    border-radius: 5px;
+}
+
+.modal-content-large {
+    max-width: 800px;
+}
+
+#infoContent {
+    margin: 1.5rem 0;
+}
+
+.info-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.info-section:last-child {
+    border-bottom: none;
+}
+
+.info-section h4 {
+    color: #667eea;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.info-photo-container {
+    float: left;
+    margin-right: 2rem;
+    margin-bottom: 1rem;
+}
+
+#infoPhoto {
+    width: 150px;
+    height: 150px;
+    border-radius: 10px;
+    border: 3px solid #667eea;
+    object-fit: cover;
+}
+
+.info-photo-container:empty {
+    display: none;
+}
+
+.info-details {
+    overflow: hidden;
+}
+
+.info-details h3 {
+    color: #667eea;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.info-row {
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+}
+
+.info-row strong {
+    color: #555;
+    min-width: 120px;
+    display: inline-block;
+}
+
+.info-row span {
+    color: #333;
+}
+
+#infoText {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 8px;
+    line-height: 1.6;
+    color: #333;
+    white-space: pre-wrap;
+}
+
+#infoText:empty::before {
+    content: 'No information provided';
+    color: #999;
+    font-style: italic;
+}
+
+#infoRelationships {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.relationship-item {
+    padding: 0.8rem;
+    background: #f0f0f0;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.relationship-type {
+    background: #667eea;
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+.relationship-name {
+    color: #333;
+    font-weight: 500;
+}
+
+#infoText {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    min-height: 80px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.6;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+#infoText:empty::before {
+    content: 'No information available';
+    color: #999;
+    font-style: italic;
+}
+
+#infoAttachments {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.attachment-item {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.attachment-item:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.attachment-item img {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+}
+
+.attachment-name {
+    font-size: 0.9rem;
+    word-break: break-word;
+}
+
+.attachment-item:empty::before {
+    content: 'No attachments';
+    color: #999;
+    font-style: italic;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.login-modal {
+    max-width: 400px;
+    text-align: center;
+}
+
+.login-modal h2 {
+    margin-bottom: 2rem;
+    font-size: 2rem;
+}
+
+.login-modal .form-group {
+    text-align: left;
+}
+
+.login-modal .form-actions {
+    margin-top: 1.5rem;
+    border-top: none;
+    padding-top: 0;
+}
+
+.login-modal .form-actions button {
+    width: 100%;
+}
+
+.login-error {
+    color: #ff4444;
+    background: #ffe6e6;
+    padding: 0.75rem;
+    border-radius: 5px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.login-error:empty {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    header h1 {
+        font-size: 1.3rem;
+    }
+
+    .header-controls {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+        justify-content: center;
+    }
+
+    #languageSelector,
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .modal-content {
+        margin: 2% auto;
+        padding: 1.5rem;
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    .modal-content h2 {
+        font-size: 1.3rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group input[type="url"],
+    .form-group select,
+    .form-group textarea {
+        padding: 0.6rem;
+        font-size: 0.9rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions button {
+        width: 100%;
+    }
+
+    .context-menu {
+        min-width: 180px;
+        font-size: 0.95rem;
+    }
+
+    .context-item {
+        padding: 1rem 1.2rem;
+    }
+
+    .modal-content-large {
+        max-width: 95%;
+    }
+
+    .info-photo-container {
+        float: none;
+        margin: 0 auto 1rem;
+        text-align: center;
+    }
+
+    #infoPhoto {
+        width: 120px;
+        height: 120px;
+    }
+
+    .info-details h3 {
+        font-size: 1.4rem;
+        text-align: center;
+    }
+
+    .info-row {
+        flex-direction: column;
+        gap: 0.2rem;
+    }
+
+    #infoAttachments {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .attachment-item {
+        padding: 0.75rem;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.1rem;
+    }
+
+    .header-controls {
+        gap: 0.4rem;
+    }
+
+    #languageSelector,
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .modal-content {
+        padding: 1rem;
+    }
+
+    .modal-content h2 {
+        font-size: 1.1rem;
+    }
+
+    .context-menu {
+        min-width: 160px;
+        font-size: 0.9rem;
+    }
+
+    .context-item {
+        padding: 0.9rem 1rem;
+    }
+
+    #infoPhoto {
+        width: 100px;
+        height: 100px;
+    }
+
+    .info-details h3 {
+        font-size: 1.2rem;
+    }
+
+    #infoAttachments {
+        grid-template-columns: 1fr;
+    }
+}
+
+.media-viewer-content {
+    max-width: 95vw;
+    max-height: 95vh;
+    width: auto;
+    padding: 1rem;
+    background: #1a1a1a;
+}
+
+.media-viewer-content .close {
+    color: white;
+    z-index: 10;
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+}
+
+.media-viewer-content .close:hover {
+    color: #667eea;
+}
+
+.media-viewer-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    min-height: 70vh;
+}
+
+.media-display {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 75vh;
+}
+
+#mediaImage {
+    max-width: 100%;
+    max-height: 75vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+#mediaFile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    padding: 3rem;
+}
+
+.media-nav-btn {
+    background: rgba(102, 126, 234, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-nav-btn:hover {
+    background: #667eea;
+    transform: scale(1.1);
+}
+
+.media-info {
+    text-align: center;
+    color: white;
+    font-size: 1.1rem;
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .media-viewer-container {
+        min-height: 50vh;
+    }
+    
+    .media-display {
+        max-height: 50vh;
+    }
+    
+    #mediaImage {
+        max-height: 50vh;
+    }
+    
+    .media-nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+    }
+}

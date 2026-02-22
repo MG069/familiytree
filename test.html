@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Tree - Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #header {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        #controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        #canvasContainer {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            background: white;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        #log {
+            position: fixed;
+            right: 10px;
+            top: 80px;
+            width: 350px;
+            max-height: 500px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            font-family: monospace;
+            font-size: 11px;
+            padding: 10px;
+            overflow-y: auto;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-error {
+            color: #f00;
+        }
+
+        .log-success {
+            color: #0f0;
+        }
+
+        .log-info {
+            color: #0ff;
+        }
+
+        #instructions {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            margin: 10px;
+            border-radius: 5px;
+        }
+
+        #instructions h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        #instructions ul {
+            margin-left: 20px;
+        }
+
+        #instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1 style="color: #667eea; margin-bottom: 10px;">Family Tree - Test Page</h1>
+        <div id="controls">
+            <button id="addPerson">Add Person</button>
+            <button id="clearCanvas">Clear All</button>
+            <button id="clearLog">Clear Log</button>
+            <button id="testDrag">Test Drag</button>
+        </div>
+    </div>
+
+    <div id="instructions">
+        <h3>Instructions:</h3>
+        <ul>
+            <li><strong>Click "Add Person"</strong> to create a person on the canvas</li>
+            <li><strong>Drag the person boxes</strong> to move them around</li>
+            <li><strong>Right-click a person</strong> to see options (not implemented in test)</li>
+            <li><strong>Watch the log</strong> on the right to see what's happening</li>
+        </ul>
+    </div>
+
+    <div id="canvasContainer">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="log">
+        <div class="log-success">Console Log:</div>
+    </div>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        log('Application starting...', 'success');
+
+        class Person {
+            constructor(id, firstName, lastName, x, y) {
+                this.id = id;
+                this.firstName = firstName;
+                this.lastName = lastName;
+                this.x = x;
+                this.y = y;
+                log(`Person created: ${firstName} ${lastName} at (${x}, ${y})`, 'success');
+            }
+
+            getFullName() {
+                return `${this.firstName} ${this.lastName}`;
+            }
+        }
+
+        class Canvas {
+            constructor(canvasElement) {
+                this.canvas = canvasElement;
+                this.ctx = canvasElement.getContext('2d');
+                this.persons = [];
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.scale = 1;
+                this.isDragging = false;
+                this.isDraggingPerson = false;
+                this.draggedPerson = null;
+                this.dragStartX = 0;
+                this.dragStartY = 0;
+                this.personWidth = 150;
+                this.personHeight = 80;
+                this.nextId = 1;
+
+                this.setupCanvas();
+                this.setupEvents();
+                log('Canvas initialized', 'success');
+            }
+
+            setupCanvas() {
+                this.canvas.width = this.canvas.clientWidth;
+                this.canvas.height = this.canvas.clientHeight;
+                log(`Canvas size: ${this.canvas.width}x${this.canvas.height}`, 'info');
+            }
+
+            setupEvents() {
+                this.canvas.addEventListener('mousedown', this.onMouseDown.bind(this));
+                document.addEventListener('mousemove', this.onMouseMove.bind(this));
+                document.addEventListener('mouseup', this.onMouseUp.bind(this));
+                window.addEventListener('resize', () => {
+                    this.setupCanvas();
+                    this.render();
+                });
+                log('Event listeners attached', 'success');
+            }
+
+            onMouseDown(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                log(`Mouse down at (${Math.round(x)}, ${Math.round(y)})`, 'info');
+
+                const person = this.getPersonAt(x, y);
+                
+                if (person) {
+                    this.isDraggingPerson = true;
+                    this.draggedPerson = person;
+                    this.dragStartX = x - person.x;
+                    this.dragStartY = y - person.y;
+                    log(`Started dragging: ${person.getFullName()}`, 'success');
+                } else {
+                    this.isDragging = true;
+                    this.dragStartX = e.clientX - this.offsetX;
+                    this.dragStartY = e.clientY - this.offsetY;
+                    log('Started panning canvas', 'info');
+                }
+            }
+
+            onMouseMove(e) {
+                if (this.isDraggingPerson && this.draggedPerson) {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+                    const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+                    this.draggedPerson.x = x - this.dragStartX;
+                    this.draggedPerson.y = y - this.dragStartY;
+                    this.render();
+                } else if (this.isDragging) {
+                    this.offsetX = e.clientX - this.dragStartX;
+                    this.offsetY = e.clientY - this.dragStartY;
+                    this.render();
+                }
+            }
+
+            onMouseUp() {
+                if (this.isDraggingPerson) {
+                    log(`Finished dragging: ${this.draggedPerson.getFullName()}`, 'success');
+                }
+                this.isDragging = false;
+                this.isDraggingPerson = false;
+                this.draggedPerson = null;
+            }
+
+            getPersonAt(x, y) {
+                for (let i = this.persons.length - 1; i >= 0; i--) {
+                    const person = this.persons[i];
+                    if (x >= person.x && x <= person.x + this.personWidth &&
+                        y >= person.y && y <= person.y + this.personHeight) {
+                        return person;
+                    }
+                }
+                return null;
+            }
+
+            addPerson(firstName, lastName) {
+                const x = 100 + Math.random() * 300;
+                const y = 100 + Math.random() * 200;
+                const person = new Person(`person_${this.nextId++}`, firstName, lastName, x, y);
+                this.persons.push(person);
+                this.render();
+                log(`Added person: ${person.getFullName()}`, 'success');
+                return person;
+            }
+
+            clear() {
+                this.persons = [];
+                this.render();
+                log('Cleared all persons', 'info');
+            }
+
+            render() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.ctx.save();
+                this.ctx.translate(this.offsetX, this.offsetY);
+                this.ctx.scale(this.scale, this.scale);
+
+                this.persons.forEach(person => this.drawPerson(person));
+
+                this.ctx.restore();
+            }
+
+            drawPerson(person) {
+                const x = person.x;
+                const y = person.y;
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.strokeStyle = '#667eea';
+                this.ctx.lineWidth = 3;
+                this.drawRoundRect(x, y, this.personWidth, this.personHeight, 10);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                this.ctx.fillStyle = '#667eea';
+                this.ctx.beginPath();
+                this.ctx.arc(x + 30, y + 40, 25, 0, Math.PI * 2);
+                this.ctx.fill();
+
+                this.ctx.fillStyle = 'white';
+                this.ctx.font = 'bold 20px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                const initials = person.firstName[0] + person.lastName[0];
+                this.ctx.fillText(initials, x + 30, y + 40);
+
+                this.ctx.fillStyle = '#333';
+                this.ctx.font = 'bold 14px Arial';
+                this.ctx.textAlign = 'left';
+                this.ctx.fillText(person.getFullName(), x + 65, y + 40);
+            }
+
+            drawRoundRect(x, y, width, height, radius) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(x + radius, y);
+                this.ctx.lineTo(x + width - radius, y);
+                this.ctx.arcTo(x + width, y, x + width, y + radius, radius);
+                this.ctx.lineTo(x + width, y + height - radius);
+                this.ctx.arcTo(x + width, y + height, x + width - radius, y + height, radius);
+                this.ctx.lineTo(x + radius, y + height);
+                this.ctx.arcTo(x, y + height, x, y + height - radius, radius);
+                this.ctx.lineTo(x, y + radius);
+                this.ctx.arcTo(x, y, x + radius, y, radius);
+                this.ctx.closePath();
+            }
+        }
+
+        const canvas = new Canvas(document.getElementById('canvas'));
+
+        const names = [
+            ['John', 'Doe'],
+            ['Jane', 'Smith'],
+            ['Bob', 'Johnson'],
+            ['Alice', 'Williams'],
+            ['Charlie', 'Brown'],
+            ['Diana', 'Jones']
+        ];
+        let nameIndex = 0;
+
+        document.getElementById('addPerson').addEventListener('click', () => {
+            const [firstName, lastName] = names[nameIndex % names.length];
+            nameIndex++;
+            canvas.addPerson(firstName, lastName);
+        });
+
+        document.getElementById('clearCanvas').addEventListener('click', () => {
+            canvas.clear();
+        });
+
+        document.getElementById('clearLog').addEventListener('click', () => {
+            logDiv.innerHTML = '<div class="log-success">Console Log (cleared):</div>';
+        });
+
+        document.getElementById('testDrag').addEventListener('click', () => {
+            log('=== DRAG TEST ===', 'success');
+            log('1. Click "Add Person" to create a person', 'info');
+            log('2. Click and hold on the person box', 'info');
+            log('3. Move your mouse while holding', 'info');
+            log('4. Release to finish dragging', 'info');
+            log('Watch for "Started dragging" and "Finished dragging" messages', 'info');
+        });
+
+        canvas.addPerson('Test', 'Person');
+        log('Initial test person created', 'success');
+        log('====================', 'success');
+        log('APPLICATION READY!', 'success');
+        log('Try dragging the person box now', 'info');
+        log('====================', 'success');
+
+        window.onerror = function(msg, url, line, col, error) {
+            log(`ERROR: ${msg} at line ${line}`, 'error');
+            return false;
+        };
+    </script>
+</body>
+</html>

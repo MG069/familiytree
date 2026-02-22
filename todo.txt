@@ -1,0 +1,7 @@
+So i want to create familiy tree web applcation with JS. 
+IT should look modern and elegant.
+It shoud work like draw.io. i want to be ablte to add a perosn. move the person arround. add children parrents or a married partner and think about the option for a second or third marreid partner maybe their diverod or somebody diverod
+the person items should have a first name and a second name.  Birthday and Deathday. A profle pic and a info text filed. also the options to attach files to it and look on the files in the web app 
+the familiy should alway be stored as a jsopn and i should be ablee to expoert and import it as a jsopn
+give the options for three languages: English, Russian  and GFerman
+Very important: I need a logfile on the system so the ai can go throgu the log file and find errors. 
