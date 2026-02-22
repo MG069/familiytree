@@ -6,7 +6,8 @@ window.addEventListener('DOMContentLoaded', () => {
   
   if (!auth.isAuthenticated()) {
     console.log('User NOT authenticated, redirecting to login...');
-    window.location.href = 'login.html';
+    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+    window.location.href = basePath + '/login.html';
     return;
   }
   
